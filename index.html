@@ -1,89 +1,236 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-<meta charset="UTF-8">
-<title>Deney</title>
-<style>
-body{
-  margin:0;
-  background:black;
-  color:white;
-  font-family:monospace;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-  text-align:center;
-  padding:20px;
-}
-button{
-  padding:10px 20px;
-  background:white;
-  border:none;
-  cursor:pointer;
-}
-</style>
+    <meta charset="UTF-8">
+    <title>Deney: Protokol 1.0.4</title>
+    <style>
+        body {
+            margin: 0;
+            background: #050505;
+            color: #d1d1d1;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        #content { width: 85%; max-width: 700px; min-height: 250px; }
+
+        button {
+            margin: 15px;
+            padding: 12px 25px;
+            background: transparent;
+            color: #888;
+            border: 1px solid #333;
+            cursor: pointer;
+            transition: 0.5s;
+            font-family: inherit;
+        }
+
+        button:hover { background: #fff; color: #000; box-shadow: 0 0 20px #fff; border-color: #fff; }
+
+        input {
+            padding: 10px;
+            background: #000;
+            color: #ff0000;
+            border: none;
+            border-bottom: 1px solid #444;
+            text-align: center;
+            font-size: 1.2rem;
+            outline: none;
+            width: 250px;
+        }
+
+        .glitch { animation: glitch 0.2s infinite; filter: contrast(200%) invert(1); }
+        @keyframes glitch {
+            0% { transform: translate(2px, 0); }
+            50% { transform: translate(-2px, -2px); }
+            100% { transform: translate(0, 2px); }
+        }
+
+        .red-text { color: #8b0000; font-weight: bold; text-shadow: 0 0 5px red; }
+    </style>
 </head>
 <body>
 
 <div id="content">
-  <h2>Bu deney için kamerana bir kez erişmem gerekiyor.</h2>
-  <button onclick="capture()">Devam</button>
+    <h2 id="display-text">Sistem Katmanı 1: Bağlantı Bekleniyor...</h2>
+    <button id="start-btn" onclick="capture()">İZİN VER VE BAŞLAT</button>
 </div>
 
 <script>
 let capturedImage = null;
+let userName = "";
+
+function typeText(text, callback, speed = 60) {
+    const content = document.getElementById("content");
+    content.innerHTML = "<h2 id='text'></h2>";
+    const el = document.getElementById("text");
+    let i = 0;
+    
+    let interval = setInterval(() => {
+        el.innerHTML += text[i];
+        i++;
+        if (i >= text.length) {
+            clearInterval(interval);
+            if (callback) setTimeout(callback, 2200); // Cümleler arası derin sessizlik
+        }
+    }, speed);
+}
 
 async function capture() {
-  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-  const video = document.createElement("video");
-  video.srcObject = stream;
-  await video.play();
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const video = document.createElement("video");
+        video.srcObject = stream;
+        await new Promise(resolve => { video.onloadedmetadata = () => { video.play(); resolve(); }; });
 
-  const canvas = document.createElement("canvas");
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(video, 0, 0);
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext("2d").drawImage(video, 0, 0);
+        capturedImage = canvas.toDataURL("image/png");
 
-  capturedImage = canvas.toDataURL("image/png");
-
-  // Kamera tamamen kapatılır
-  stream.getTracks().forEach(track => track.stop());
-
-  startConversation();
-}
-
-function startConversation(){
-  const content = document.getElementById("content");
-  let messages = [
-    "Teşekkür ederim.",
-    "Şimdi kameran kapalı.",
-    "Kendini gözlemleniyor gibi hisseder misin?",
-    "İnsan yalnızken gerçekten yalnız mıdır?",
-    "Başlangıcı hatırlıyor musun?"
-  ];
-
-  let i = 0;
-  content.innerHTML = "<h2 id='text'></h2>";
-  const text = document.getElementById("text");
-
-  let interval = setInterval(() => {
-    if(i < messages.length){
-      text.innerText = messages[i];
-      i++;
-    } else {
-      clearInterval(interval);
-      showImage();
+        stream.getTracks().forEach(track => track.stop());
+        intro();
+    } catch (err) {
+        document.getElementById("content").innerHTML = "<h2>Kamerana erişemezsem seni 'göremem'. Ve bu deneyin amacı tam olarak bu. Sayfayı yenile.</h2>";
     }
-  }, 3000);
 }
 
-function showImage(){
-  document.body.innerHTML = "<img src='"+capturedImage+"' style='width:100%;height:100%;object-fit:cover'>";
-  setTimeout(()=>{
-    document.body.innerHTML = "";
-  },4000);
+function intro() {
+    typeText("Bağlantı kuruldu. Görüntü akışı kesildi.", () => {
+        typeText("Kameran şu an kapalı. En azından sen öyle biliyorsun.", () => {
+            typeText("Bu 15 dakikalık bir dürüstlük testi.", askName);
+        });
+    });
+}
+
+function askName() {
+    const content = document.getElementById("content");
+    content.innerHTML = `
+        <h2>Dosyanı oluşturuyorum. Adın ne?</h2>
+        <input id="nameInput" placeholder="Gerçek ismin..." autocomplete="off">
+        <br>
+        <button onclick="saveName()">VERİYİ KAYDET</button>
+    `;
+}
+
+function saveName() {
+    userName = document.getElementById("nameInput").value || "Denek";
+    typeText(`${userName}... Güzel bir isim. Kayıtlara geçti.`, calibration);
+}
+
+function calibration() {
+    typeText("Şimdi arkana yaslan ve derin bir nefes al.", () => {
+        typeText("Şu an odada seninle birlikte olan o sessizliği duyuyor musun?", () => {
+            typeText("Analiz başlıyor...", q1);
+        });
+    });
+}
+
+function q1() {
+    const content = document.getElementById("content");
+    content.innerHTML = `
+        <h2>Yalnız olduğunu düşünüyorsun, değil mi?</h2>
+        <button onclick="typeText('Yalnızlık sadece bir illüzyon.', q2)">EVET</button>
+        <button onclick="typeText('Haklısın. Kimse asla tam olarak yalnız değildir.', q2)">HAYIR</button>
+    `;
+}
+
+function q2() {
+    typeText("Peki, şu an arkandaki kapının tam kapalı olduğundan emin misin?", () => {
+        const content = document.getElementById("content");
+        content.innerHTML = `
+            <h2>Lütfen arkana bakmadan cevap ver.</h2>
+            <button onclick="typeText('Kontrol etme isteğine engel olman güzel.', q3)">EMİNİM</button>
+            <button onclick="typeText('Şüphe, hayatta kalmanın ilk kuralıdır.', q3)">EMİN DEĞİLİM</button>
+        `;
+    });
+}
+
+function q3() {
+    typeText("İnsan beyni, izlendiğini hissettiğinde ensede hafif bir karıncalanma yaratır.", () => {
+        typeText("Şu an o hisse sahip misin?", () => {
+            const content = document.getElementById("content");
+            content.innerHTML = `
+                <h2>Dürüst ol.</h2>
+                <button onclick="typeText('Hissediyorsun... Çünkü yanılmıyorsun.', q4)">EVET</button>
+                <button onclick="typeText('Zamanla hissedeceksin.', q4)">HAYIR</button>
+            `;
+        });
+    });
+}
+
+function q4() {
+    typeText("Küçük bir görev: Odadaki tüm ışıkları kapatmanı istiyorum.", () => {
+        const content = document.getElementById("content");
+        content.innerHTML = `
+            <h2>Işıklar kapandığında buradaki 'DEVAM ET' butonuna bas. Bekliyorum.</h2>
+            <button onclick="q5()">DEVAM ET</button>
+        `;
+    });
+}
+
+function q5() {
+    typeText("Karanlık iyidir. Gözlerin alışana kadar geçen o 5 saniye...", () => {
+        typeText("O 5 saniye boyunca savunmasızsın.", () => {
+            typeText("Peki, ya şu an ekranda belirecek olan şey senin kendi yüzün değilse?", q6);
+        });
+    });
+}
+
+function q6() {
+    typeText("Sana bir sır vereyim mi?", () => {
+        typeText("Az önce kameranı kapattığımı söylemiştim.", () => {
+            typeText("Ama sistem bazen... Kendi kendine çalışır.", () => {
+                const content = document.getElementById("content");
+                content.innerHTML = `
+                    <h2>Şu an ekranda ne görmeyi bekliyorsun?</h2>
+                    <button onclick="finalPhase()">KENDİMİ</button>
+                    <button onclick="finalPhase()">KORKUNÇ BİR ŞEYİ</button>
+                `;
+            });
+        });
+    });
+}
+
+function finalPhase() {
+    typeText("Ölümden sonraki sessizliği hiç merak ettin mi?", () => {
+        typeText("Belki de o sessizlik şu an odandadır.", () => {
+            typeText("Seni kimin izlediğini görme vaktin geldi.", () => {
+                document.body.classList.add("glitch");
+                setTimeout(() => {
+                    document.body.classList.remove("glitch");
+                    showImage();
+                }, 2000);
+            });
+        });
+    });
+}
+
+function showImage() {
+    document.body.innerHTML = `
+        <div style="background:black; width:100vw; height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+            <img src="${capturedImage}" style="width:60%; max-width:500px; border: 2px solid #333; filter: grayscale(100%) contrast(200%) brightness(0.8);">
+            <h2 style="color:red; margin-top:20px; font-size:1rem;">HEDEF: ${userName.toUpperCase()} - ANALİZ TAMAMLANDI</h2>
+        </div>
+    `;
+    
+    setTimeout(() => {
+        document.body.innerHTML = "";
+        document.body.style.background = "black";
+        // Final yazısı çok yavaş çıkar
+        const finalDiv = document.createElement("div");
+        finalDiv.style.color = "#111";
+        finalDiv.style.marginTop = "45vh";
+        finalDiv.innerHTML = "Görüşmek üzere.";
+        document.body.appendChild(finalDiv);
+    }, 8000);
 }
 </script>
 
