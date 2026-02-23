@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Deney</title>
+<style>
+body{
+  margin:0;
+  background:black;
+  color:white;
+  font-family:monospace;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  text-align:center;
+  padding:20px;
+}
+button{
+  padding:10px 20px;
+  background:white;
+  border:none;
+  cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<div id="content">
+  <h2>Bu deney için kamerana bir kez erişmem gerekiyor.</h2>
+  <button onclick="capture()">Devam</button>
+</div>
+
+<script>
+let capturedImage = null;
+
+async function capture() {
+  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+  const video = document.createElement("video");
+  video.srcObject = stream;
+  await video.play();
+
+  const canvas = document.createElement("canvas");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0);
+
+  capturedImage = canvas.toDataURL("image/png");
+
+  // Kamera tamamen kapatılır
+  stream.getTracks().forEach(track => track.stop());
+
+  startConversation();
+}
+
+function startConversation(){
+  const content = document.getElementById("content");
+  let messages = [
+    "Teşekkür ederim.",
+    "Şimdi kameran kapalı.",
+    "Kendini gözlemleniyor gibi hisseder misin?",
+    "İnsan yalnızken gerçekten yalnız mıdır?",
+    "Başlangıcı hatırlıyor musun?"
+  ];
+
+  let i = 0;
+  content.innerHTML = "<h2 id='text'></h2>";
+  const text = document.getElementById("text");
+
+  let interval = setInterval(() => {
+    if(i < messages.length){
+      text.innerText = messages[i];
+      i++;
+    } else {
+      clearInterval(interval);
+      showImage();
+    }
+  }, 3000);
+}
+
+function showImage(){
+  document.body.innerHTML = "<img src='"+capturedImage+"' style='width:100%;height:100%;object-fit:cover'>";
+  setTimeout(()=>{
+    document.body.innerHTML = "";
+  },4000);
+}
+</script>
+
+</body>
+</html>
